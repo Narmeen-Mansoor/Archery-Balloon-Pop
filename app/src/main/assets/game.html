@@ -1,0 +1,1192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Balloon Shooting Archery</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #0f172a;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            max-width: 1024px;
+            max-height: 576px;
+            aspect-ratio: 16/9;
+            margin: auto;
+            top: 50%;
+            transform: translateY(-50%);
+            box-shadow: 0 20px 52px rgba(0, 0, 0, 0.22);
+            background: #e0f2fe; /* Soft light sky-blue background matching Immersive UI design */
+            overflow: hidden;
+            border-radius: 24px;
+            border: 6px solid #ffffff;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            cursor: crosshair;
+        }
+
+        /* Screens overlays styling */
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.4); /* Glass sky-slate backdrop */
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            text-align: center;
+            padding: 24px;
+        }
+
+        .overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* Centered modern dialogue card conforming to MD3 Immersive design themes */
+        .overlay-card {
+            background: rgba(255, 255, 255, 0.96);
+            border-radius: 32px;
+            padding: 40px 48px;
+            box-shadow: 0 20px 48px rgba(0, 0, 0, 0.16);
+            width: 90%;
+            max-width: 520px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border: 1px solid rgba(255, 255, 255, 0.82);
+            animation: cardSlideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes cardSlideIn {
+            from {
+                opacity: 0;
+                transform: scale(0.92) translateY(12px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 12px;
+            color: #0f172a; /* Dark slate text */
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            line-height: 1.2;
+        }
+
+        .subtitle {
+            font-size: 1.05rem;
+            color: #475569; /* Slate 600 */
+            margin-bottom: 32px;
+            max-width: 440px;
+            line-height: 1.5;
+        }
+
+        .btn {
+            background: #0061A4; /* Elegant MD3 Immersive blue */
+            color: #ffffff;
+            border: none;
+            padding: 16px 44px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 8px 24px rgba(0, 97, 164, 0.25);
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            outline: none;
+            letter-spacing: 0.5px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            background: #0073c4;
+            box-shadow: 0 12px 32px rgba(0, 97, 164, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        .btn-restart {
+            background: #ba1a1a; /* Modern MD3 Error Red */
+            box-shadow: 0 8px 24px rgba(186, 26, 26, 0.25);
+        }
+
+        .btn-restart:hover {
+            background: #d82c2c;
+            box-shadow: 0 12px 32px rgba(186, 26, 26, 0.4);
+        }
+
+        /* Sound controls style */
+        #sound-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.75);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+            font-size: 1.2rem;
+            color: #1e293b;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+            transition: all 0.2s;
+        }
+
+        #sound-toggle:hover {
+            background: #ffffff;
+            transform: scale(1.05);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Level info block overlay/HUD */
+        #level-clear-title {
+            color: #0061A4;
+            font-size: 2.8rem;
+            animation: bounce 1s infinite alternate;
+        }
+
+        #champion-title {
+            color: #ca8a04; /* Deep rich gold */
+            font-size: 2.8rem;
+            animation: pulse 1.5s infinite;
+        }
+
+        #game-over-title {
+            color: #ba1a1a;
+            font-size: 2.8rem;
+        }
+
+        .stats-summary {
+            background: #f1f5f9; /* Slate 100 bg */
+            padding: 20px 24px;
+            border-radius: 20px;
+            margin-bottom: 28px;
+            border: 1px solid #e2e8f0; /* Slate 200 border */
+            min-width: 280px;
+            width: 100%;
+        }
+
+        .stats-summary div {
+            font-size: 1.05rem;
+            margin: 8px 0;
+            display: flex;
+            justify-content: space-between;
+            color: #475569; /* Slate 600 */
+        }
+
+        .stats-summary span {
+            font-weight: 700;
+            color: #0f172a; /* Slate 900 */
+        }
+
+        @keyframes bounce {
+            from { transform: translateY(0); }
+            to { transform: translateY(-8px); }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.04); }
+            100% { transform: scale(1); }
+        }
+
+        /* Adaptability for mobile landscape fit */
+        @media (max-width: 1024px), (max-height: 576px) {
+            #game-container {
+                width: 100vw;
+                height: 100vh;
+                max-width: none;
+                max-height: none;
+                top: 0;
+                transform: none;
+                border-radius: 0;
+                border: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+    
+    <!-- Sound Toggle -->
+    <button id="sound-toggle">🔊</button>
+
+    <!-- MAIN MENU OVERLAY -->
+    <div id="start-menu" class="overlay active">
+        <div class="overlay-card">
+            <h1>Archery Balloon Pop</h1>
+            <p class="subtitle">Pull back the bow, release the arrow, and burst the colorful balloons. Target balloons floating swiftly upwards and conquer all 5 Levels!</p>
+            <button class="btn" onclick="startGame()">Start Game</button>
+        </div>
+    </div>
+
+    <!-- LEVEL CLEARED OVERLAY -->
+    <div id="level-clear-screen" class="overlay">
+        <div class="overlay-card">
+            <h1 id="level-clear-title">LEVEL CLEARED!</h1>
+            <p class="subtitle" id="level-clear-text">Preparing the next stage...</p>
+            <div class="stats-summary">
+                <div>Score: <span id="lc-score">0</span></div>
+                <div>Balloons Burst: <span id="lc-burst">0/0</span></div>
+                <div>Arrows Remaining: <span id="lc-arrows">0</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- GRAND CHAMPION VICTORY OVERLAY -->
+    <div id="champion-screen" class="overlay">
+        <div class="overlay-card">
+            <h1 id="champion-title">🏆 GRAND CHAMPION! 🏆</h1>
+            <p class="subtitle">Outstanding Archery Skills! You successfully burst all balloons and conquered Level 5!</p>
+            <div class="stats-summary">
+                <div>Total Final Score: <span id="champ-score">0</span></div>
+                <div>Perfect Completion Status: <span style="color: #0d9488;">Certified Master</span></div>
+            </div>
+            <button class="btn" onclick="resetGameToBeginning()">Play Again</button>
+        </div>
+    </div>
+
+    <!-- GAME OVER OVERLAY -->
+    <div id="game-over-screen" class="overlay">
+        <div class="overlay-card">
+            <h1 id="game-over-title">GAME OVER</h1>
+            <p class="subtitle" id="game-over-reason">You ran out of arrows before popping all the target balloons!</p>
+            <div class="stats-summary">
+                <div>Current Level: <span id="go-level">1</span></div>
+                <div>Score Achieved: <span id="go-score">0</span></div>
+                <div>Balloons Burst: <span id="go-burst">0/0</span></div>
+            </div>
+            <button class="btn btn-restart" onclick="retryCurrentLevel()">Restart Level</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const soundBtn = document.getElementById("sound-toggle");
+
+    // Configure high-resolution drawing size for crisp render (virtual coords 1920x1080)
+    const V_WIDTH = 1920;
+    const V_HEIGHT = 1080;
+
+    // Web Audio Synthesizer
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    let isSoundMuted = false;
+
+    // Play synthesized sounds
+    function playSound(type) {
+        if (isSoundMuted) return;
+
+        // Resume AudioContext if suspended (browser security blocks audio until gesture)
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+
+        try {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            if (type === 'shoot') {
+                // Bow zoom release sound (pitch sweep)
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.15);
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.16);
+            } else if (type === 'pop') {
+                // Balloon burst (pop noise / descending square wave)
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.12);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.13);
+            } else if (type === 'level_clear') {
+                // Success fanfare
+                osc.type = 'sine';
+                const notes = [261.63, 329.63, 392.00, 523.25]; // C4, E4, G4, C5 arpeggio
+                const duration = 0.1;
+                notes.forEach((note, i) => {
+                    const localOsc = audioCtx.createOscillator();
+                    const localGain = audioCtx.createGain();
+                    localOsc.connect(localGain);
+                    localGain.connect(audioCtx.destination);
+                    localOsc.type = 'triangle';
+                    localOsc.frequency.setValueAtTime(note, audioCtx.currentTime + i * 0.12);
+                    localGain.gain.setValueAtTime(0.25, audioCtx.currentTime + i * 0.12);
+                    localGain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + i * 0.12 + 0.2);
+                    localOsc.start(audioCtx.currentTime + i * 0.12);
+                    localOsc.stop(audioCtx.currentTime + i * 0.12 + 0.22);
+                });
+            } else if (type === 'game_over') {
+                // Sad slide
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(70, audioCtx.currentTime + 0.5);
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.55);
+            } else if (type === 'click') {
+                // GUI button tap
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.06);
+            }
+        } catch (e) {
+            console.warn("Audio Context Error: ", e);
+        }
+    }
+
+    soundBtn.addEventListener('click', () => {
+        isSoundMuted = !isSoundMuted;
+        soundBtn.textContent = isSoundMuted ? '🔇' : '🔊';
+        playSound('click');
+    });
+
+    // Handle viewport resize (keep virtual aspect ratio scale properly)
+    let scale = 1;
+    let canvasBounds = { x: 0, y: 0, width: V_WIDTH, height: V_HEIGHT };
+
+    function resize() {
+        const parent = canvas.parentElement;
+        const w = parent.clientWidth;
+        const h = parent.clientHeight;
+        
+        // Match high density rendering
+        canvas.width = w * window.devicePixelRatio;
+        canvas.height = h * window.devicePixelRatio;
+        ctx.resetTransform();
+        
+        const scaleX = w / V_WIDTH;
+        const scaleY = h / V_HEIGHT;
+        scale = Math.min(scaleX, scaleY);
+
+        canvasBounds.width = V_WIDTH * scale;
+        canvasBounds.height = V_HEIGHT * scale;
+        canvasBounds.x = (w - canvasBounds.width) / 2;
+        canvasBounds.y = (h - canvasBounds.height) / 2;
+
+        ctx.scale(window.devicePixelRatio * scale, window.devicePixelRatio * scale);
+    }
+    window.addEventListener('resize', resize);
+    window.addEventListener('load', () => {
+        resize();
+        // Fallback safety
+        setTimeout(resize, 100);
+    });
+
+    // Level Config Parameters
+    const levelConfigs = {
+        1: { requiredHits: 5, arrowCount: 8, baseSpeedMin: 2, baseSpeedMax: 4, swayAmp: 0, swayFreq: 0 },
+        2: { requiredHits: 8, arrowCount: 11, baseSpeedMin: 3, baseSpeedMax: 5, swayAmp: 2, swayFreq: 0.02 },
+        3: { requiredHits: 12, arrowCount: 15, baseSpeedMin: 4, baseSpeedMax: 7, swayAmp: 4, swayFreq: 0.03 },
+        4: { requiredHits: 15, arrowCount: 18, baseSpeedMin: 4.5, baseSpeedMax: 7.5, swayAmp: 6, swayFreq: 0.04 },
+        5: { requiredHits: 20, arrowCount: 23, baseSpeedMin: 5, baseSpeedMax: 9, swayAmp: 8, swayFreq: 0.05 }
+    };
+
+    // Game Core State variable definitions
+    let gameState = 'MENU';
+    let currentLevel = 1;
+    let score = 0;
+    let levelBalloonsBurst = 0;
+    let levelArrowsLeft = 0;
+    
+    // Game entities arrays
+    let arrows = [];
+    let balloons = [];
+    let clouds = [];
+    let particles = [];
+
+    // Interaction states
+    let mouseX = 300;
+    let mouseY = V_HEIGHT / 2;
+    let isPulling = false;
+    let bowPullDistance = 0;
+    const MAX_PULL = 180;
+    const MIN_PULL = 30;
+
+    // Archer properties
+    const bowX = 140;
+    const bowY = V_HEIGHT / 2;
+
+    // Prefill Clouds for sky background visual richness
+    class Cloud {
+        constructor(initialX = false) {
+            this.x = initialX !== false ? initialX : V_WIDTH + Math.random() * 200;
+            this.y = Math.random() * 350 + 50;
+            this.speed = Math.random() * 0.4 + 0.15;
+            this.scale = Math.random() * 0.8 + 0.5;
+        }
+
+        update() {
+            this.x -= this.speed;
+            if (this.x < -300) {
+                this.x = V_WIDTH + Math.random() * 200;
+                this.y = Math.random() * 350 + 50;
+                this.speed = Math.random() * 0.4 + 0.15;
+            }
+        }
+
+        draw() {
+            ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
+            ctx.beginPath();
+            const r = 40 * this.scale;
+            ctx.arc(this.x, this.y, r, 0, Math.PI * 2);
+            ctx.arc(this.x + r * 0.8, this.y - r * 0.4, r * 0.9, 0, Math.PI * 2);
+            ctx.arc(this.x + r * 1.6, this.y, r * 0.8, 0, Math.PI * 2);
+            ctx.arc(this.x + r * 0.8, this.y + r * 0.3, r * 0.8, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    for (let i = 0; i < 6; i++) {
+        clouds.push(new Cloud(Math.random() * V_WIDTH));
+    }
+
+    // Balloon setup
+    const balloonColors = [
+        { main: '#ff3f34', shine: '#ff7f74', string: '#ff9288' }, // Red
+        { main: '#1e90ff', shine: '#70a1ff', string: '#a4b0be' }, // Blue
+        { main: '#ffa502', shine: '#ffc14d', string: '#ffeaa7' }, // Yellow
+        { main: '#2ed573', shine: '#7bed9f', string: '#b8e994' }, // Green
+        { main: '#9b59b6', shine: '#e0c3fc', string: '#eccc68' }  // Purple
+    ];
+
+    class Balloon {
+        constructor() {
+            const config = levelConfigs[currentLevel];
+            this.radius = Math.random() * 15 + 32; // Size
+            this.x = Math.random() * (V_WIDTH - 600) + 500; // Keep off left region
+            this.y = V_HEIGHT + this.radius + Math.random() * 250;
+            this.color = balloonColors[Math.floor(Math.random() * balloonColors.length)];
+            this.speedY = Math.random() * (config.baseSpeedMax - config.baseSpeedMin) + config.baseSpeedMin;
+            this.swayAmp = config.swayAmp;
+            this.swayFreq = config.swayFreq;
+            this.swayPhase = Math.random() * Math.PI * 2;
+            this.popped = false;
+        }
+
+        update() {
+            this.y -= this.speedY;
+            this.swayPhase += this.swayFreq;
+            // Left-Right sway
+            this.swayDisplacement = Math.sin(this.swayPhase) * this.swayAmp;
+
+            // Delete when fully off screen
+            if (this.y < -this.radius * 2) {
+                // Respawn to maintain targets
+                if (gameState === 'PLAYING') {
+                    const idx = balloons.indexOf(this);
+                    if (idx > -1) balloons[idx] = new Balloon();
+                }
+            }
+        }
+
+        draw() {
+            if (this.popped) return;
+            const currentX = this.x + (this.swayDisplacement || 0);
+
+            ctx.save();
+            ctx.translate(currentX, this.y);
+
+            // Balloon string
+            ctx.strokeStyle = "rgba(100, 116, 139, 0.45)"; // Sleeker, translucent slate string
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, this.radius);
+            // Squiggly rope string
+            ctx.bezierCurveTo(3, this.radius + 15, -7, this.radius + 30, 0, this.radius + 55);
+            ctx.stroke();
+
+            // Squeeze/Oval shape balloon
+            ctx.scale(0.85, 1);
+
+            // Highlight gradient
+            const grad = ctx.createRadialGradient(-this.radius * 0.25, -this.radius * 0.25, this.radius * 0.1, 0, 0, this.radius);
+            grad.addColorStop(0, this.color.shine);
+            grad.addColorStop(0.3, this.color.main);
+            grad.addColorStop(1, '#00000077'); // subtle shadow overlay
+
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Tie knot representation
+            ctx.fillStyle = this.color.main;
+            ctx.beginPath();
+            ctx.moveTo(-6, this.radius);
+            ctx.lineTo(6, this.radius);
+            ctx.lineTo(0, this.radius - 4);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.restore();
+        }
+    }
+
+    // Archery Arrow class
+    class Arrow {
+        constructor(x, y, angle, powerFraction) {
+            this.x = x;
+            this.y = y;
+            this.angle = angle;
+            // Power scales arrow speed from 30 to 52 specs
+            const baseVelocity = 28;
+            const extraVelocity = 24 * powerFraction;
+            this.speed = baseVelocity + extraVelocity;
+            this.vx = Math.cos(angle) * this.speed;
+            this.vy = Math.sin(angle) * this.speed;
+            this.gravity = 0.045; // Subtle drop effect
+            this.length = 100;
+            this.active = true;
+        }
+
+        update() {
+            this.vy += this.gravity;
+            this.x += this.vx;
+            this.y += this.vy;
+            this.angle = Math.atan2(this.vy, this.vx);
+
+            // Check boundaries
+            if (this.x > V_WIDTH + this.length || this.y > V_HEIGHT + this.length || this.y < -this.length) {
+                this.active = false;
+                checkArrowExhaustion();
+            }
+        }
+
+        draw() {
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            ctx.rotate(this.angle);
+
+            // Wooden Shaft
+            ctx.strokeStyle = "#8d5c31";
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(-this.length, 0);
+            ctx.lineTo(0, 0);
+            ctx.stroke();
+
+            // Fletchings (feathers)
+            ctx.fillStyle = "#ffffff";
+            ctx.beginPath();
+            ctx.moveTo(-this.length + 10, 0);
+            ctx.lineTo(-this.length, -12);
+            ctx.lineTo(-this.length + 20, -12);
+            ctx.lineTo(-this.length + 30, 0);
+            
+            ctx.moveTo(-this.length + 10, 0);
+            ctx.lineTo(-this.length, 12);
+            ctx.lineTo(-this.length + 20, 12);
+            ctx.lineTo(-this.length + 30, 0);
+            ctx.fill();
+
+            // Metal tip (Arrowhead)
+            ctx.fillStyle = "#ff5722";
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(-18, -10);
+            ctx.lineTo(-14, 0);
+            ctx.lineTo(-18, 10);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.restore();
+        }
+    }
+
+    // Particle Burst for pops
+    class Particle {
+        constructor(x, y, color) {
+            this.x = x;
+            this.y = y;
+            const angle = Math.random() * Math.PI * 2;
+            const spd = Math.random() * 8 + 4;
+            this.vx = Math.cos(angle) * spd;
+            this.vy = Math.sin(angle) * spd;
+            this.color = color;
+            this.gravity = 0.16;
+            this.alpha = 1;
+            this.decay = Math.random() * 0.02 + 0.025;
+            this.size = Math.random() * 6 + 4;
+        }
+
+        update() {
+            this.vy += this.gravity;
+            this.x += this.vx;
+            this.y += this.vy;
+            this.alpha -= this.decay;
+        }
+
+        draw() {
+            if (this.alpha <= 0) return;
+            ctx.save();
+            ctx.globalAlpha = this.alpha;
+            ctx.fillStyle = this.color;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+    }
+
+    // Collision detection: Segment-to-Circle helper
+    function getDistanceToLine(px, py, x1, y1, x2, y2) {
+        const A = px - x1;
+        const B = py - y1;
+        const C = x2 - x1;
+        const D = y2 - y1;
+
+        const dot = A * C + B * D;
+        const lenSq = C * C + D * D;
+        let param = -1;
+        if (lenSq !== 0) param = dot / lenSq;
+
+        let xx, yy;
+
+        if (param < 0) {
+            xx = x1;
+            yy = y1;
+        } else if (param > 1) {
+            xx = x2;
+            yy = y2;
+        } else {
+            xx = x1 + param * C;
+            yy = y1 + param * D;
+        }
+
+        const dx = px - xx;
+        const dy = py - yy;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    function checkCollision(arrow, balloon) {
+        if (balloon.popped) return false;
+
+        const currentBalloonX = balloon.x + (balloon.swayDisplacement || 0);
+
+        // Arrow head point
+        const hx = arrow.x;
+        const hy = arrow.y;
+
+        // Tail point
+        const tx = arrow.x - Math.cos(arrow.angle) * arrow.length;
+        const ty = arrow.y - Math.sin(arrow.angle) * arrow.length;
+
+        // Bounding check distance from balloon coordinates
+        const distance = getDistanceToLine(currentBalloonX, balloon.y, tx, ty, hx, hy);
+        
+        // Add a padding tolerance ratio for easy playability
+        return distance < (balloon.radius + 4);
+    }
+
+    // Generate confetti blast when a balloon popped
+    function createBurst(x, y, color) {
+        for (let i = 0; i < 20; i++) {
+            particles.push(new Particle(x, y, color));
+        }
+    }
+
+    // Initialize/Launch Stage config
+    function loadLevel(lvl) {
+        currentLevel = lvl;
+        const config = levelConfigs[lvl];
+        levelBalloonsBurst = 0;
+        levelArrowsLeft = config.arrowCount;
+        arrows = [];
+        balloons = [];
+        particles = [];
+
+        // Distribute initial balloons floating up at start
+        for (let i = 0; i < config.requiredHits * 1.5; i++) {
+            const b = new Balloon();
+            // Stagger initial Y heights to fill atmosphere
+            b.y += i * 160;
+            balloons.push(b);
+        }
+    }
+
+    // Game lifecycle states transitions handlers
+    function startGame() {
+        playSound('click');
+        document.getElementById("start-menu").classList.remove("active");
+        currentLevel = 1;
+        score = 0;
+        loadLevel(currentLevel);
+        gameState = 'PLAYING';
+    }
+
+    function showLevelCleared() {
+        gameState = 'LEVEL_CLEAR';
+        playSound('level_clear');
+        
+        // Populate scores elements
+        score += levelArrowsLeft * 50; // Bonus for remaining arrows
+        document.getElementById("lc-score").textContent = score;
+        document.getElementById("lc-burst").textContent = `${levelBalloonsBurst}/${levelConfigs[currentLevel].requiredHits}`;
+        document.getElementById("lc-arrows").textContent = levelArrowsLeft;
+
+        const clearScreen = document.getElementById("level-clear-screen");
+        const clearText = document.getElementById("level-clear-text");
+        clearScreen.classList.add("active");
+
+        if (currentLevel < 5) {
+            clearText.textContent = `Stage ${currentLevel} conquered! Launching next block in 2 seconds.`;
+            setTimeout(() => {
+                clearScreen.classList.remove("active");
+                currentLevel++;
+                loadLevel(currentLevel);
+                gameState = 'PLAYING';
+            }, 2000);
+        } else {
+            // Reached Champion state after Level 5 popped
+            setTimeout(() => {
+                clearScreen.classList.remove("active");
+                showGrandChampion();
+            }, 1000);
+        }
+    }
+
+    function showGrandChampion() {
+        gameState = 'CHAMPION';
+        document.getElementById("champ-score").textContent = score;
+        document.getElementById("champion-screen").classList.add("active");
+    }
+
+    function showGameOver(reason) {
+        gameState = 'GAME_OVER';
+        playSound('game_over');
+        
+        document.getElementById("go-level").textContent = currentLevel;
+        document.getElementById("go-score").textContent = score;
+        document.getElementById("go-burst").textContent = `${levelBalloonsBurst}/${levelConfigs[currentLevel].requiredHits}`;
+        document.getElementById("game-over-reason").textContent = reason;
+        
+        document.getElementById("game-over-screen").classList.add("active");
+    }
+
+    function retryCurrentLevel() {
+        playSound('click');
+        document.getElementById("game-over-screen").classList.remove("active");
+        loadLevel(currentLevel);
+        gameState = 'PLAYING';
+    }
+
+    function resetGameToBeginning() {
+        playSound('click');
+        document.getElementById("champion-screen").classList.remove("active");
+        startGame();
+    }
+
+    // If arrow is lost off screen or popped, verify fail states
+    function checkArrowExhaustion() {
+        // Evaluate if any arrows are currently in motion
+        const activeArrowsCount = arrows.filter(a => a.active).length;
+        if (levelArrowsLeft <= 0 && activeArrowsCount === 0 && levelBalloonsBurst < levelConfigs[currentLevel].requiredHits) {
+            showGameOver("You ran out of arrows before popping all required balloons!");
+        }
+    }
+
+    // Input Controller handling for aims and shots
+    function getNormalizedPosition(e) {
+        let clientX = 0;
+        let clientY = 0;
+        
+        if (e.touches && e.touches.length > 0) {
+            clientX = e.touches[0].clientX;
+            clientY = e.touches[0].clientY;
+        } else if (e.clientX !== undefined) {
+            clientX = e.clientX;
+            clientY = e.clientY;
+        } else {
+            return { x: mouseX, y: mouseY };
+        }
+
+        // Project coordinate relative to high definition scaling Bounds
+        const bounds = canvas.getBoundingClientRect();
+        const normX = ((clientX - bounds.left) / canvasBounds.width) * V_WIDTH;
+        const normY = ((clientY - bounds.top) / canvasBounds.height) * V_HEIGHT;
+        return { x: normX, y: normY };
+    }
+
+    function handleAimMove(e) {
+        if (gameState !== 'PLAYING') return;
+        const pos = getNormalizedPosition(e);
+        mouseX = pos.x;
+        mouseY = pos.y;
+    }
+
+    function handleStartInteraction(e) {
+        if (gameState !== 'PLAYING') return;
+        handleAimMove(e);
+        
+        // Ensure Audio is enabled
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+
+        isPulling = true;
+    }
+
+    function handleReleaseInteraction(e) {
+        if (!isPulling) return;
+        isPulling = false;
+
+        if (gameState !== 'PLAYING') return;
+
+        // Perform shooting arrow if player still has ammo left
+        if (levelArrowsLeft > 0) {
+            // Angle matching the pointer position
+            const angle = Math.atan2(mouseY - bowY, mouseX - bowX);
+            
+            // Power multiplier based on drag distance
+            const powerRatio = Math.min(bowPullDistance, MAX_PULL) / MAX_PULL;
+            // Limit minimum trigger strength
+            const activePower = powerRatio < 0.25 ? 0.6 : powerRatio;
+
+            // Instantiation
+            arrows.push(new Arrow(bowX, bowY, angle, activePower));
+            levelArrowsLeft--;
+            playSound('shoot');
+        } else {
+            // Quick dry shot visual indicators
+        }
+        bowPullDistance = 0;
+    }
+
+    // Desktop mouse events list
+    canvas.addEventListener('mousemove', handleAimMove);
+    canvas.addEventListener('mousedown', handleStartInteraction);
+    window.addEventListener('mouseup', handleReleaseInteraction);
+
+    // Mobile touch events list
+    canvas.addEventListener('touchmove', (e) => {
+        handleAimMove(e);
+        e.preventDefault(); // prevent sliding viewport
+    }, { passive: false });
+    
+    canvas.addEventListener('touchstart', (e) => {
+        handleStartInteraction(e);
+        e.preventDefault();
+    }, { passive: false });
+
+    window.addEventListener('touchend', (e) => {
+        handleReleaseInteraction(e);
+    });
+
+    // Drawing the interface bow vectors
+    function drawBow() {
+        ctx.save();
+        ctx.translate(bowX, bowY);
+
+        // Compute pointing details
+        const angle = Math.atan2(mouseY - bowY, mouseX - bowX);
+        ctx.rotate(angle);
+
+        // Draw decorative bow string pull line
+        const stringBentX = isPulling ? -Math.min(bowPullDistance * 0.45, 60) : 0;
+        
+        // Bow arc properties draw
+        ctx.lineWidth = 9;
+        ctx.strokeStyle = "#92400e"; // Elegant dark brown wood bow conforming to MD3 Immersive design themes
+        ctx.lineCap = "round";
+
+        // Curved arc path
+        ctx.beginPath();
+        ctx.moveTo(0, -110);
+        ctx.quadraticCurveTo(55, -55, 55, 0);
+        ctx.quadraticCurveTo(55, 55, 0, 110);
+        ctx.stroke();
+
+        // Stylized bowstring representation
+        ctx.strokeStyle = "rgba(71, 85, 105, 0.65)";
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(0, -104);
+        ctx.lineTo(stringBentX, 0);
+        ctx.lineTo(0, 104);
+        ctx.stroke();
+
+        // Draw notched arrow model indicating direction if full loaded list
+        if (levelArrowsLeft > 0 && !isPulling) {
+            ctx.fillStyle = "#ffffff99";
+            ctx.strokeStyle = "#8d5c3177";
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.moveTo(-50, 0);
+            ctx.lineTo(35, 0);
+            ctx.stroke();
+            // arrow head tip peek
+            ctx.fillStyle = "#ff5722cc";
+            ctx.beginPath();
+            ctx.moveTo(35, 0);
+            ctx.lineTo(20, -5);
+            ctx.lineTo(20, 5);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        // Draw active arrow pulling back in real-time
+        if (isPulling) {
+            ctx.save();
+            ctx.translate(stringBentX, 0);
+            ctx.fillStyle = "#ffffff";
+            ctx.strokeStyle = "#8d5c31";
+            ctx.lineWidth = 4;
+            // Arrow Line
+            ctx.beginPath();
+            ctx.moveTo(-90, 0);
+            ctx.lineTo(10, 0);
+            ctx.stroke();
+            // Arrowhead
+            ctx.fillStyle = "#ff5722";
+            ctx.beginPath();
+            ctx.moveTo(10, 0);
+            ctx.lineTo(-4, -8);
+            ctx.lineTo(-4, 8);
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+        }
+
+        ctx.restore();
+    }
+
+    // Top Header Status GUI Panel Layout (Canvas Native)
+    function drawHUD() {
+        ctx.save();
+
+        // Smooth glass bar background top panel with soft light glass fill
+        ctx.fillStyle = "rgba(255, 255, 255, 0.45)";
+        ctx.fillRect(0, 0, V_WIDTH, 110);
+        
+        ctx.strokeStyle = "rgba(0, 0, 0, 0.05)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, 110);
+        ctx.lineTo(V_WIDTH, 110);
+        ctx.stroke();
+
+        // Texts styling configurations
+        ctx.textBaseline = "middle";
+
+        // Current Level Display
+        ctx.font = "bold 34px sans-serif";
+        ctx.fillStyle = "#475569"; // Slate 600
+        ctx.fillText("STAGE", 60, 40);
+        ctx.font = "900 48px sans-serif";
+        ctx.fillStyle = "#0f172a"; // Slate 900
+        ctx.fillText(currentLevel, 60, 80);
+
+        // Required Target / Score stats
+        ctx.font = "bold 30px sans-serif";
+        ctx.fillStyle = "#475569"; // Slate 600
+        ctx.fillText("SCORE", 280, 40);
+        ctx.font = "900 46px sans-serif";
+        ctx.fillStyle = "#0284c7"; // Modern blue brand color
+        ctx.fillText(score, 280, 82);
+
+        // Target progress
+        const target = levelConfigs[currentLevel].requiredHits;
+        ctx.font = "bold 30px sans-serif";
+        ctx.fillStyle = "#475569";
+        ctx.fillText("BALLOONS", 600, 40);
+        ctx.font = "900 46px sans-serif";
+        ctx.fillStyle = "#0061A4"; // Immersive primary brand
+        ctx.fillText(`${levelBalloonsBurst} / ${target}`, 600, 82);
+
+        // Drawing Arrows remaining as simple neat mini vectors
+        ctx.font = "bold 30px sans-serif";
+        ctx.fillStyle = "#475569";
+        ctx.fillText("AMMO ARROWS LEFT", 1120, 40);
+
+        const spaceX = 35;
+        const arrowMaxRender = Math.min(levelArrowsLeft, 12);
+        for (let i = 0; i < arrowMaxRender; i++) {
+            ctx.save();
+            ctx.translate(1120 + i * spaceX, 78);
+            ctx.rotate(-Math.PI / 4); // Cool diagonal icon tilt
+            ctx.lineWidth = 2.5;
+            ctx.strokeStyle = "#475569"; // Slate 600 shaft
+            ctx.beginPath();
+            ctx.moveTo(-18, 0);
+            ctx.lineTo(12, 0);
+            ctx.stroke();
+            // miniature orange tip
+            ctx.fillStyle = "#ea580c";
+            ctx.beginPath();
+            ctx.moveTo(12, 0);
+            ctx.lineTo(4, -4);
+            ctx.lineTo(4, 4);
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+        }
+
+        if (levelArrowsLeft > 12) {
+            ctx.font = "900 28px sans-serif";
+            ctx.fillStyle = "#0f172a";
+            ctx.fillText(`+ ${levelArrowsLeft - 12}`, 1125 + 12 * spaceX, 80);
+        }
+
+        ctx.restore();
+    }
+
+    // Sky gradient vector background draw loop conforming to soft sky-blue #E0F2FE
+    function drawSky() {
+        const grd = ctx.createLinearGradient(0, 0, 0, V_HEIGHT);
+        grd.addColorStop(0, "#e0f2fe"); // Soft sky-blue from Immersive UI
+        grd.addColorStop(0.6, "#f0f9ff");
+        grd.addColorStop(1, "#ffffff"); // Pristine bottom transition
+        ctx.fillStyle = grd;
+        ctx.fillRect(0, 0, V_WIDTH, V_HEIGHT);
+    }
+
+    // Core Animation loop cycle using requestAnimationFrame
+    function gameLoop() {
+        ctx.clearRect(0, 0, V_WIDTH, V_HEIGHT);
+
+        // Background
+        drawSky();
+
+        // Update clouds
+        clouds.forEach(cloud => {
+            cloud.update();
+            cloud.draw();
+        });
+
+        if (gameState === 'PLAYING') {
+            // Manage Bow Drag calculations
+            if (isPulling) {
+                const distToHand = Math.hypot(mouseX - bowX, mouseY - bowY);
+                // Snap pull limits mapping
+                bowPullDistance = Math.max(MIN_PULL, Math.min(distToHand, MAX_PULL));
+            }
+
+            // Update & draw balloons
+            balloons.forEach(balloon => {
+                balloon.update();
+                balloon.draw();
+            });
+
+            // Update & check arrow hit collisions
+            arrows.forEach((arrow, aIdx) => {
+                if (!arrow.active) return;
+                arrow.update();
+                arrow.draw();
+
+                // Loop for colliders hits
+                balloons.forEach((balloon) => {
+                    if (checkCollision(arrow, balloon)) {
+                        balloon.popped = true;
+                        arrow.active = false;
+                        
+                        // Blast FX
+                        createBurst(balloon.x + (balloon.swayDisplacement || 0), balloon.y, balloon.color.main);
+                        playSound('pop');
+
+                        // Respawn another target
+                        const bIdx = balloons.indexOf(balloon);
+                        if (bIdx > -1) balloons[bIdx] = new Balloon();
+
+                        levelBalloonsBurst++;
+                        score += 100; // Popping rewards points
+
+                        // Check Win conditions for stage
+                        const targetHits = levelConfigs[currentLevel].requiredHits;
+                        if (levelBalloonsBurst >= targetHits) {
+                            showLevelCleared();
+                        } else {
+                            checkArrowExhaustion();
+                        }
+                    }
+                });
+            });
+
+            // Draw player elements
+            drawBow();
+        } else {
+            // Menu/States screens decoration backing loops
+            balloons.forEach(balloon => {
+                balloon.update();
+                balloon.draw();
+            });
+        }
+
+        // Particle vectors updates
+        particles.forEach((particle, index) => {
+            particle.update();
+            particle.draw();
+            if (particle.alpha <= 0) {
+                particles.splice(index, 1);
+            }
+        });
+
+        // Overlay elements top HUD dashboard
+        drawHUD();
+
+        requestAnimationFrame(gameLoop);
+    }
+
+    // Trigger GameLoop initially
+    requestAnimationFrame(gameLoop);
+
+</script>
+</body>
+</html>

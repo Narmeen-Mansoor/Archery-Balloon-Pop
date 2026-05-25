@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    
+    <!-- Popped Balloon Body (vibrant pinkish red highlight) -->
+    <path
+        android:pathData="M54,26 C64.5,26 73,34.5 73,45 C73,53.5 67,61.5 56,63.5 L56,65 L59,67 L49,67 L52,65 L52,63.5 C41,61.5 35,53.5 35,45 C35,34.5 43.5,26 54,26 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="54"
+                android:startY="26"
+                android:endX="54"
+                android:endY="67"
+                android:type="linear">
+                <item android:color="#ff5e57" android:offset="0.0" />
+                <item android:color="#ff3f34" android:offset="1.0" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Balloon Highlight (Glint of light) -->
+    <path
+        android:fillColor="#ffffff"
+        android:fillAlpha="0.4"
+        android:pathData="M43,37 A7,7 0 0 1 50,30 A1,1 0 0 1 50,32 A5,5 0 0 0 45,37 A1,1 0 0 1 43,37 Z" />
+
+    <!-- Balloon String (Slightly hanging down) -->
+    <path
+        android:strokeColor="#ffffff"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M54,67 Q51,75 56,83 T52,93" />
+
+    <!-- Archery Arrow crossing the screen -->
+    <!-- Shadow for Arrow Shaft first to lift it off the balloon -->
+    <path
+        android:strokeColor="#20000000"
+        android:strokeWidth="5.5"
+        android:strokeLineCap="round"
+        android:pathData="M24,84 L72,36" />
+        
+    <!-- Main Arrow Shaft -->
+    <path
+        android:strokeColor="#ffffff"
+        android:strokeWidth="3.5"
+        android:strokeLineCap="round"
+        android:pathData="M24,84 L72,36" />
+
+    <!-- Arrow Fletchings (Feathers) -->
+    <path
+        android:fillColor="#ffffff"
+        android:pathData="M24,84 L17,81 L20,88 Z M28,80 L21,77 L24,84 Z" />
+
+    <!-- Vibrant Arrowhead Tip -->
+    <path
+        android:fillColor="#ffdd59"
+        android:pathData="M72,36 L64,36 L68,44 Z" />
+
+    <!-- Golden Pop Sparks (Vibrant yellow accents) -->
+    <!-- Spark 1 -->
+    <path
+        android:fillColor="#ffdd59"
+        android:pathData="M30,30 L32,24 L34,30 L40,32 L34,34 L32,40 L30,34 L24,32 Z" />
+    <!-- Spark 2 -->
+    <path
+        android:fillColor="#ffdd59"
+        android:pathData="M76,52 L78,48 L80,52 L84,54 L80,56 L78,60 L76,56 L72,54 Z" />
+</vector>

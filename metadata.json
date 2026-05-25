@@ -1,0 +1,6 @@
+{
+  "name": "Archery Balloon Pop",
+  "description": "An elegant HTML5 Balloon Shooting Archery game embedded in a production-grade Android Jetpack Compose host.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

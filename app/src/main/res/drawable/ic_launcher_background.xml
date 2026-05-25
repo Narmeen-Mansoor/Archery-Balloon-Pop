@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path android:pathData="M0,0h108v108h-108z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="0"
+                android:startY="0"
+                android:endX="108"
+                android:endY="108"
+                android:type="linear">
+                <item android:color="#54a0ff" android:offset="0.0" />
+                <item android:color="#2e86de" android:offset="1.0" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <!-- Simple decorative vector clouds on the launcher icon background -->
+    <path
+        android:fillColor="#ffffff"
+        android:fillAlpha="0.3"
+        android:pathData="M15,45 Q22,38 30,42 Q38,32 50,38 Q62,35 68,45 A12,12 0 0 1 68,60 L15,60 Z" />
+    <path
+        android:fillColor="#ffffff"
+        android:fillAlpha="0.25"
+        android:pathData="M45,72 Q52,65 60,69 Q68,59 80,65 Q92,62 98,72 A12,12 0 0 1 98,87 L45,87 Z" />
+</vector>
